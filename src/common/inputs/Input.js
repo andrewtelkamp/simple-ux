@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   Animated,
   Image,
@@ -8,8 +8,6 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Colors } from '../../config';
-
-const shouldAnimate = new Animated.Value(0);
 
 export const Input = ({
   borderRadius,
@@ -38,6 +36,7 @@ export const Input = ({
   validatedLabelFontWeight = '700',
   ...props
 }) => {
+  const shouldAnimate = useRef(new Animated.Value(0))
   const [isFocused, setIsFocused] = useState(false);
   
   const handleFocus = () => {
@@ -54,7 +53,7 @@ export const Input = ({
   };
 
   const animateLabelTo = value => {
-    Animated.timing(shouldAnimate, {
+    Animated.timing(shouldAnimate.current, {
       toValue: value,
       duration: 100,
       useNativeDriver: false,
@@ -66,17 +65,18 @@ export const Input = ({
   const labelAfterTop = 0 - ((borderWidth / 2) + (threeFourthsFontSize / 2));
 
   // interpolating style values
-  const interpolLabelSize = shouldAnimate.interpolate({
+  const interpolLabelSize = shouldAnimate.current.interpolate({
     inputRange: [0, 1],
     outputRange: [fontSize, threeFourthsFontSize],
   })
-  const interpolLabelTop = shouldAnimate.interpolate({
+  const interpolLabelTop = shouldAnimate.current.interpolate({
     inputRange: [0, 1],
     outputRange: [threeFourthsFontSize, labelAfterTop],
   });
 
   // label styling
   let containerStyle = {
+    backgroundColor,
     borderColor,
     borderRadius,
     borderWidth,
