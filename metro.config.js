@@ -15,3 +15,5 @@ module.exports = {
     }),
   },
 };
+
+console.disableYellowBox = true;
