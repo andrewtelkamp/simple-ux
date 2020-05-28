@@ -1,106 +1,112 @@
-import React, { Component } from 'react';
+import React, { Component } from 'react'
 import {
   Animated,
   Dimensions,
   PanResponder,
   View,
-} from 'react-native';
-import PropTypes from 'prop-types';
+} from 'react-native'
+import PropTypes from 'prop-types'
 
-const deviceHeight = Dimensions.get('window').height;
+const deviceHeight = Dimensions.get('window').height
 
 
 export class ExpandableModal extends Component {
   state = {
     modalHeight: 0,
-  };
+  }
 
   // Calculate offset values by device height. Used in PanResponder and animations
-  _expandedOffset = this.props.expandedOffset * deviceHeight;
-  _visibleOffset = this.props.visibleOffset * deviceHeight;
+  _expandedOffset = this.props.expandedOffset * deviceHeight
+  _visibleOffset = this.props.visibleOffset * deviceHeight
   
   // Requiring threshold be be less than half of it's height.
   // Prevents situations where users are unable to close modal.
   maxVisibleSwipeThreshold = Math.min(
     (deviceHeight - this._visibleOffset) / 2,
     this.props.swipeThreshold
-  );
+  )
 
   // Init animated values
-  modalOffset = new Animated.Value(deviceHeight);
-  currentPanOffset = new Animated.Value(0);
-  currentModalOffset = Animated.add(this.modalOffset, this.currentPanOffset);
+  modalOffset = new Animated.Value(deviceHeight)
+  currentPanOffset = new Animated.Value(0)
+  currentModalOffset = Animated.add(this.modalOffset, this.currentPanOffset)
 
-  // Setting the height of the modal
+  // TODO: See if we can get and set the modal height. We can use it
+  // to make the modal "sticky" when a user has panned all the way to
+  // to the bottom
   setModalHeight = event => {
-    const { height } = event.nativeEvent.layout;
-    console.log('modalHeight', height);
-    this.setState({ modalHeight: height });
-  };
+    const { height } = event.nativeEvent.layout
+    this.setState({ modalHeight: height })
+  }
 
   // Handle user gestures/panning
   panResponder = PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onPanResponderStart: (e, gs) => {
-      // Parent hook for swipeStart
+      // Props hook
       if (this.props.onSwipeStart) {
-        this.props.onSwipeStart(e, gs);
+        this.props.onSwipeStart(e, gs)
       }
     },
 
     onPanResponderMove: (e, gs) => {
       // Update offset of the modal to include y change
       // from user pan. Get's jumpy if throttled
-      this.currentPanOffset.setValue(gs.dy);
+      this.currentPanOffset.setValue(gs.dy)
 
-      // Parent hook for onSwipe. Should likely should be throttled
+      // Props hook. Should likely should be throttled
       if (this.props.onSwipe) {
-        this.props.onSwipe(e, gs);
-      };
+        this.props.onSwipe(e, gs)
+      }
     },
 
     onPanResponderRelease: (e, gs) => {
-      const { _value } = this.currentPanOffset;
-      const { isExpanded, swipeThreshold, isVisible } = this.props;
+      const { _value } = this.currentPanOffset
+      const { isExpanded, swipeThreshold, isVisible } = this.props
 
       if (isExpanded) {
-        const distanceBelowTop = this.modalOffset._value + gs.dy;
+        const distanceBelowTop = this.modalOffset._value + gs.dy
+        
         // Modal above the top fold. Overriding modal offset to
         // maintain "above the fold" positioning for next click
         if (distanceBelowTop < this._expandedOffset) {
-          this.modalOffset.setValue(this.currentPanOffset._value += this.modalOffset._value);
-          this.currentPanOffset.setValue(0);
-        // User has scrolled far enought to collapse the modal
+          this.modalOffset.setValue(this.currentPanOffset._value += this.modalOffset._value)
+          this.currentPanOffset.setValue(0)
+        
+          // User has scrolled far enough to collapse the modal
         } else if (distanceBelowTop > swipeThreshold) {
-          this.props.onSwipeToCollapse(e, gs);
-          this.resetUserPan(this.props.collapseAnimationDuration);
+          this.props.onSwipeToCollapse(e, gs)
+          this.resetUserPan(this.props.collapseAnimationDuration)
+        
         // User hasn't scrolled far enough to trigger a collapse,
-        // yet is below the fold, so we'll animate back to top
+        // yet is below the fold. Animate back to top
         } else {
-          this.animateToExpanded();
-          this.resetUserPan();
+          this.animateToExpanded()
+          this.resetUserPan()
         }
       } else if (isVisible) {
+        
         // User swiping to close modal
         if (_value > 0 && Math.abs(_value) > this.maxVisibleSwipeThreshold) {
-          this.props.onSwipeToHide(e, gs);
-          this.resetUserPan(this.props.hideAnimationDuration);
-        // User swiping to expand modal
+          this.props.onSwipeToHide(e, gs)
+          this.resetUserPan(this.props.hideAnimationDuration)
+        
+          // User swiping to expand modal
         } else if (_value < 0 && Math.abs(_value) > this.maxVisibleSwipeThreshold) {
-          this.props.onSwipeToExpand(e, gs);
+          this.props.onSwipeToExpand(e, gs)
           this.resetUserPan(this.props.expandAnimationDuration)
         } else {
           this.resetUserPan()
         }
       }
       
-      // hook when swipeThreshold not met
+      // Props hook
       if (this.props.onSwipeCancel) {
-        this.props.onSwipeCancel(e, gs);
+        this.props.onSwipeCancel(e, gs)
       }
     },
-  });
+  })
 
 
   // Modal animations
@@ -109,14 +115,14 @@ export class ExpandableModal extends Component {
       toValue,
       duration: time || this.props.defaultAnimationDuration,
       useNativeDriver: false,
-    }).start(cb);
-  };
+    }).start(cb)
+  }
 
   animateToVisible = () => this.animateModalOffset(
     this._visibleOffset,
     this.props.showAnimationDuration,
     this.props.onShowModalComplete,
-  );
+  )
 
   animateToCollapsed = () => this.animateModalOffset(
     this._visibleOffset,
@@ -128,13 +134,13 @@ export class ExpandableModal extends Component {
     this._expandedOffset,
     this.props.expandAnimationDuration,
     this.props.onExpandModalComplete,
-  );
+  )
 
   animateToHidden = () => this.animateModalOffset(
     deviceHeight,
     this.props.hideAnimationDuration,
     this.props.onHideModalComplete,
-  );
+  )
 
 
   // User-pan animations
@@ -143,24 +149,24 @@ export class ExpandableModal extends Component {
       toValue,
       duration: time || this.props.defaultAnimationDuration,
       useNativeDriver: false,
-    }).start(cb);
-  };
+    }).start(cb)
+  }
 
-  resetUserPan = time => this.animatePanOffset(0, time);
+  resetUserPan = time => this.animatePanOffset(0, time)
 
 
   // Lifecycles
   componentDidUpdate(prevProps) {
-    const { isExpanded, isVisible } = this.props;
+    const { isExpanded, isVisible } = this.props
 
     if (!prevProps.isExpanded && isExpanded) {
-      this.animateToExpanded();
+      this.animateToExpanded()
     } else if (prevProps.isExpanded && !isExpanded) {
-      this.animateToCollapsed();
+      this.animateToCollapsed()
     } else if (!prevProps.isVisible && isVisible) {
-      this.animateToVisible();
+      this.animateToVisible()
     } else if (prevProps.isVisible && !isVisible) {
-      this.animateToHidden();
+      this.animateToHidden()
     }
   }
 
@@ -196,7 +202,7 @@ ExpandableModal.propTypes = {
   showAnimationDuration: PropTypes.number, // Milliseconds for modal to animate in from bottom of the screen
   swipeThreshold: PropTypes.number, // Threshold distance for swipe to trigger animation
   visibleOffset: PropTypes.number, // Visible (shown) Modal offset from top of screen (Float b/n 0 and 1)
-};
+}
 
 ExpandableModal.defaultProps = {
   defaultAnimationDuration: 300,
@@ -214,4 +220,4 @@ const styles = {
     position: 'absolute',
     width: '100%',
   },
-};
+}
