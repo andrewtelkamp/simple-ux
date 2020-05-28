@@ -76,7 +76,7 @@ export const ExampleModalContent = () => {
 const styles = {
   content: {
     backgroundColor: Colors.WHITE,
-    height: '100%',
+    minHeight: '100%',
     padding: 20,
     paddingBottom: 40,
     borderTopRightRadius: 10,
