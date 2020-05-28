@@ -6,9 +6,9 @@ import { Colors } from '../config';
 export const ExampleModalContent = () => {
   return (
     <View style={ styles.content }>
-      <View style={ styles.header }>
+      <SafeAreaView style={ styles.header }>
         <View style={ styles.pullIcon } />
-      </View>
+      </SafeAreaView>
 
       <Section isLarge>
         <Title value="Title 1" />
