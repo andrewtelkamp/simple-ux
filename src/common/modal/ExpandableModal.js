@@ -50,45 +50,62 @@ export class ExpandableModal extends Component {
         this.props.onSwipe(e, gs);
       };
     },
+
     onPanResponderRelease: (e, gs) => {
       const { _value } = this.currentPanOffset;
       const { isExpanded, swipeThreshold, isVisible } = this.props;
 
-      
+      // console.log('modalOffset', this.modalOffset._value);
+      // console.log('currentPanOffset', this.currentPanOffset._value);
 
-      if (isExpanded && gs.dy >= 0) {
-        console.log(1)
+      // console.log('modalRef', this.modalRef._children[0].viewConfig.validAttributes.bottom);
+      // console.log('ref', this.modalRef);
+      // console.log('measure', this.modalRef._children[0].measure());
+      // console.log('measureLayout', this.modalRef._children[0].measureLayout());
+      // console.log('measureInWindow', this.modalRef._children[0].measureInWindow());
+
+      // Modal exceeds top of screen
+      if (this.modalOffset._value <= 0) {
+        if (this.modalOffset._value + gs.dy >= 0) {
+          this.animateToExpanded();
+          this.resetUserPan();
+        } else {
+          // console.log(1)
+          this.modalOffset.setValue(this.currentPanOffset._value += this.modalOffset._value);
+          this.currentPanOffset.setValue(0);
+        }
+
+      } else if (isExpanded) {
         // User swiping to collapse fully expanded modal
         if (_value > 0 && Math.abs(_value) > swipeThreshold) {
-          console.log(2);
+          console.log(2)
           this.props.onSwipeToCollapse(e, gs);
           this.resetUserPan(this.props.collapseAnimationDuration)
+        } else if (_value > 0 && Math.abs(_value) < swipeThreshold) {
+          console.log(3)
+          this.resetUserPan();
         }
-      } else if (isVisible && !isExpanded) {
+
+      } else if (isVisible) {
         // User swiping to close modal
         if (_value > 0 && Math.abs(_value) > this.maxVisibleSwipeThreshold) {
-          console.log(3)
+          console.log(4)
           this.props.onSwipeToHide(e, gs);
           this.resetUserPan(this.props.hideAnimationDuration);
         
         // User swiping to expand modal
-        } else if (_value < 0 && Math.abs(_value) > this.maxVisibleSwipeThreshold)
-          console.log(4)
+        } else if (_value < 0 && Math.abs(_value) > this.maxVisibleSwipeThreshold) {
+          console.log(5)
           this.props.onSwipeToExpand(e, gs);
           this.resetUserPan(this.props.expandAnimationDuration)
-      
-      // Parent hook when swipeThreshold not met
-      } else if (this.props.onSwipeCancel) {
-        console.log(5)
-        this.props.onSwipeCancel(e, gs);
-        // this.resetUserPan(this.props.cancelSwipeAnimationDuration)
+        }
       }
       
-      // TODO: figure out why this else isn't being reached
-      // } else {
-        // this.resetUserPan();
-      // }
-    },
+      // Parent hook when swipeThreshold not met
+      if (this.props.onSwipeCancel) {
+        this.props.onSwipeCancel(e, gs);
+      }
+    }
   });
 
 
@@ -156,6 +173,7 @@ export class ExpandableModal extends Component {
   render() {
     return (
       <Animated.View
+        ref={ ref => this.modalRef = ref }
         style={[
           styles.modal,
           { 
@@ -203,11 +221,11 @@ ExpandableModal.defaultProps = {
 
 const styles = {
   content: {
-    // minHeight: '100%',
-    flex: 1,
+    minHeight: '100%',
+    // flex: 1,
   },
   modal: {
-    backgroundColor: 'white',
+    // backgroundColor: 'white',
     bottom: 0,
     position: 'absolute',
     width: '100%',
